@@ -1,14 +1,9 @@
+#![cfg_attr(feature = "guest", no_std)]
 #![no_main]
-use risc0_zkvm::guest::env;
 use tlsn_substrings_verifier::proof::{SessionHeader, SubstringsProof};
 
-risc0_zkvm::guest::entry!(main);
-
-
-fn main() {
-    // read the substring
-    let (session_header,  substrings): (String, String) = env::read();
-
+#[jolt::provable]
+fn circuit_main(session_header: String, substrings: String) -> (bool, bool) {
     // handle deserialization manually
     // ? more efficiently pass bytes instead of strings?
     let session_header: SessionHeader = serde_json::from_str(&session_header).unwrap();
@@ -20,6 +15,5 @@ fn main() {
     let is_req = !sent.data().to_vec().is_empty();
     let is_res = !recv.data().to_vec().is_empty();
 
-    env::log("committing results to journal");
-    env::commit(&(is_req, is_res));
+    (is_req, is_res)
 }
